@@ -27,6 +27,7 @@ const MODULES = [
   { id: "m-magnetic", n: "07",   name: "MAGNETIC",    meta: "Pointer pull",               hot: "7" },
   { id: "m-spotlight",n: "08",   name: "SPOTLIGHT",   meta: "3D lit surface",             hot: "8" },
   { id: "m-webgl",    n: "+3D",  name: "WEBGL",       meta: "Torus-knot rig",             hot: "9" },
+  { id: "m-katana",   n: "+K",   name: "KATANA",      meta: "Scroll-scrubbed draw",       hot: null },
   { id: "m-impulse",  n: "09",   name: "IMPULSE",     meta: "Velocity → springs",         hot: "0" },
   { id: "m-drag",     n: "+D",   name: "DRAG",        meta: "Momentum + rest spring",     hot: null },
   { id: "m-split",    n: "10",   name: "SPLIT",       meta: "Per-char cascade",           hot: null },
@@ -189,7 +190,7 @@ requestAnimationFrame(master);
 
 const BOOT_LINES = [
   "STRINGREVEAL", "STRINGPARALLAX", "STRINGPROGRESS", "STRINGLERP", "STRINGGLIDE",
-  "STRINGCURSOR", "STRINGMAGNETIC", "STRINGSPOTLIGHT", "LONGSTRING.GL", "STRINGIMPULSE",
+  "STRINGCURSOR", "STRINGMAGNETIC", "STRINGSPOTLIGHT", "LONGSTRING.GL", "KATANA.SEQ", "STRINGIMPULSE",
   "STRINGSPLIT", "STRINGSEQUENCE", "STRINGDIAG", "WEBGL CONTEXT", "GPU BUFFERS", "RAF LOOP",
 ];
 
@@ -811,6 +812,102 @@ $$(".vmq").forEach((wrap) => {
 })();
 
 /* ================================================================
+   9b. KATANA SECTION (+K scroll-scrubbed frame sequence)
+================================================================ */
+
+(function katanaSequence() {
+  const wrap = $("#katana-wrap"), canvas = $("#katana-canvas");
+  const ctx = canvas.getContext("2d");
+  const frameEl = $("#kt-frame"), secEl = $("#kt-sec"), velEl = $("#kt-vel");
+  const drawEl = $("#kt-draw"), barEl = $("#kt-bar"), bufEl = $("#kt-buf");
+  const TOTAL = 71, PEAK = 35; /* frame_036 = fully drawn blade */
+  const BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.BASE_URL) || "/";
+  const srcOf = (i) => `${BASE}katana/frame_${pad(i + 1, 3)}.webp`;
+  const frames = [];
+  let loaded = 0, lastDrawn = -1, lastRead = 0;
+  const ambientOK = typeof ctx.filter === "string"; /* Safari <18: skip blurred underlay */
+  const skew = new Spring(150, 18), zoom = new Spring(150, 18);
+  zoom.x = zoom.target = 1.02;
+
+  const setBuf = () => {
+    bufEl.textContent = loaded >= TOTAL ? "BUFFER OK" : `BUFFER ${pad(loaded, 2)}/${TOTAL}`;
+    if (loaded >= TOTAL) setTimeout(() => bufEl.classList.add("opacity-0"), 1200);
+  };
+  for (let i = 0; i < TOTAL; i++) {
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => { loaded++; setBuf(); if (i === 0 && lastDrawn < 0) drawFrame(0); };
+    img.src = srcOf(i);
+    frames.push(img);
+  }
+  setBuf();
+
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    const d = Math.min(motion.dpr, motion.touch ? 1.5 : 1.8);
+    canvas.width = Math.max(2, Math.round(r.width * d));
+    canvas.height = Math.max(2, Math.round(r.height * d));
+    lastDrawn = -1;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  function nearestLoaded(i) {
+    if (frames[i].complete && frames[i].naturalWidth) return i;
+    for (let d = 1; d < 7; d++) {
+      const a = i - d, b = i + d;
+      if (a >= 0 && frames[a].complete && frames[a].naturalWidth) return a;
+      if (b < TOTAL && frames[b].complete && frames[b].naturalWidth) return b;
+    }
+    return -1;
+  }
+
+  function drawFrame(i) {
+    const img = frames[i];
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    if (ambientOK) { /* same frame, smeared into ambience */
+      const s = Math.max(W / img.width, H / img.height) * 1.1;
+      ctx.save();
+      ctx.filter = `blur(${Math.round(Math.min(W, H) * 0.045)}px) brightness(0.55) saturate(1.15)`;
+      ctx.globalAlpha = 0.5;
+      ctx.drawImage(img, (W - img.width * s) / 2, (H - img.height * s) / 2, img.width * s, img.height * s);
+      ctx.restore();
+    }
+    const s = Math.min(W / img.width, H / img.height) * 0.94; /* contain — blade never clips */
+    ctx.drawImage(img, (W - img.width * s) / 2, (H - img.height * s) / 2, img.width * s, img.height * s);
+    lastDrawn = i;
+  }
+
+  updaters.push((dt, t) => {
+    const r = wrap.getBoundingClientRect();
+    if (r.top > motion.vh || r.bottom < 0) return;
+    const p = clamp01(-r.top / (r.height - motion.vh));
+    const idx = Math.min(TOTAL - 1, Math.round(p * (TOTAL - 1)));
+    const drawAmt = idx <= PEAK ? idx / PEAK : 1 - (idx - PEAK) / (TOTAL - 1 - PEAK);
+    if (t - lastRead > 0.12) {
+      lastRead = t;
+      secEl.textContent = `${pad(Math.round(p * 100), 3)}%`;
+      frameEl.textContent = `${pad(idx + 1, 2)} / ${TOTAL}`;
+      drawEl.textContent = pad(Math.round(drawAmt * 100), 3);
+      const rv = Math.round(motion.velocity);
+      velEl.textContent = `${rv > 0 ? "+" : ""}${rv}`;
+    }
+    barEl.style.width = `${p * 100}%`;
+    if (!motion.reduced) { /* scroll velocity flexes the whole frame on springs */
+      const v = Math.min(Math.abs(motion.velocity) / 7000, 1);
+      skew.target = Math.max(-1, Math.min(1, motion.velocity / 7000)) * 1.6;
+      zoom.target = 1.02 + v * 0.035;
+      skew.step(dt); zoom.step(dt);
+      canvas.style.transform = `scale(${zoom.x.toFixed(4)}) rotate(${skew.x.toFixed(3)}deg)`;
+    }
+    if (idx === lastDrawn) return;
+    const use = nearestLoaded(idx);
+    if (use >= 0 && use !== lastDrawn) drawFrame(use);
+  });
+})();
+
+/* ================================================================
    10. FIX #5/#6: SPLIT + OUTRO — manual char splitting (no anime.js text.split)
 ================================================================ */
 
@@ -1382,7 +1479,7 @@ $("#ft-export")?.addEventListener("click", exportJSON);
   const PREVIEW_KIND = {
     "m-reveal": "bars", "m-parallax": "wire", "m-progress": "arc", "m-lerp": "wave",
     "m-glide": "wave", "m-cursor": "wire", "m-magnetic": "arc", "m-spotlight": "arc",
-    "m-webgl": "wire", "m-impulse": "wave", "m-drag": "bars", "m-split": "glyph",
+    "m-webgl": "wire", "m-katana": "glyph", "m-impulse": "wave", "m-drag": "bars", "m-split": "glyph",
     "m-mask": "wire", "m-sequence": "bars", "m-diag": "wave", "m-marquee": "wave",
     "m-registry": "bars", "top": "wire", "m-outro": "glyph", "footer": "glyph",
   };
