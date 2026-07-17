@@ -661,6 +661,50 @@
       </div>
     </section>
 
+    <!-- ==================== +K KATANA ==================== -->
+    <section id="m-katana" data-module="+K / KATANA.SEQ" class="relative border-t border-line">
+      <div class="mx-auto max-w-[1440px] px-5 pt-14 md:px-10 md:pt-20">
+        <div class="flex items-center justify-between gap-4 border-b border-line pb-4">
+          <div class="flex items-center gap-3"><span class="h-1.5 w-1.5 animate-blink bg-acid"></span>
+            <span class="tick-label text-fog">MODULE <span class="text-bone">+K</span> — <span class="text-acid">KATANA.SEQ</span></span></div>
+          <div class="hidden gap-2 md:flex">
+            <span class="tick-label border border-line px-2 py-1 text-fog">71 FRAMES</span>
+            <span class="tick-label border border-line px-2 py-1 text-fog">2.2 MB WEBP</span>
+            <span class="tick-label border border-line px-2 py-1 text-fog">STICKY SCRUB</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 gap-6 pb-10 pt-8 md:grid-cols-12 md:pb-16 md:pt-12">
+          <div class="md:col-span-7"><h2 class="rv text-balance font-display text-[clamp(2rem,4.2vw,3.6rem)] font-medium leading-[1.02] tracking-tight text-bone">The blade answers the scroll.</h2></div>
+          <div class="md:col-span-4 md:col-start-9"><p class="rv max-w-sm text-[15px] leading-relaxed text-fog" style="--rvd: 0.12s">Seventy-one frames of cinematic battō — a full draw-and-return, scrubbed by scroll travel across three screens. Velocity flexes the frame on springs; the smeared underlay is the same frame blurred into ambience.</p></div>
+        </div>
+      </div>
+      <div id="katana-wrap" class="relative mx-auto h-[320vh] max-w-[1440px]">
+        <div class="sticky top-0 flex h-screen items-center px-5 pb-8 md:px-10 md:pb-12">
+          <div id="katana-stage" class="relative h-full w-full overflow-hidden border border-line bg-ink2">
+            <canvas id="katana-canvas" class="absolute inset-0 h-full w-full will-change-transform"></canvas>
+            <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(var(--acid-rgb),0.05),transparent_64%)]"></div>
+            <div class="tick-label pointer-events-none absolute left-4 top-4 flex items-center gap-2 text-fog">
+              <span class="h-1.5 w-1.5 animate-blink bg-acid"></span>KATANA.SEQ — LIVE
+              <span id="kt-buf" class="ml-1 border border-line px-2 py-1 text-fog transition-opacity duration-500">BUFFER 00/71</span>
+            </div>
+            <div class="tick-label pointer-events-none absolute right-4 top-4 flex items-center gap-2 text-fog">
+              <svg class="h-3.5 w-3.5 text-acid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20 20 4"/><path d="M14 4h6v6"/></svg>
+              DRAW <span id="kt-draw" class="tabular-nums text-bone">000</span>%
+            </div>
+            <div class="pointer-events-none absolute bottom-0 left-0 right-0 flex flex-wrap items-end justify-between gap-4 p-4">
+              <div class="grid grid-cols-3 divide-x divide-line border border-line bg-ink/80 backdrop-blur-md">
+                <div class="px-3 py-2"><div class="tick-label text-fog">FRAME</div><div id="kt-frame" class="tick-label mt-0.5 tabular-nums text-bone">01 / 71</div></div>
+                <div class="px-3 py-2"><div class="tick-label text-fog">SECTION</div><div id="kt-sec" class="tick-label mt-0.5 tabular-nums text-bone">000%</div></div>
+                <div class="px-3 py-2"><div class="tick-label text-fog">VELOCITY</div><div id="kt-vel" class="tick-label mt-0.5 tabular-nums text-bone">+0</div></div>
+              </div>
+              <span class="tick-label hidden text-fog md:block">SCROLL ↓ DRAW · ↑ SHEATHE</span>
+            </div>
+            <div id="kt-bar" class="absolute bottom-0 left-0 h-0.5 bg-acid" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== 09 IMPULSE ==================== -->
     <section id="m-impulse" data-module="09 / STRINGIMPULSE" class="relative border-t border-line">
       <div class="mx-auto max-w-[1440px] px-5 pt-14 md:px-10 md:pt-20">
